@@ -3,7 +3,7 @@ import type { DailyResponse, Evaluation, LibraryWord, PracticeWord, WordStatus }
 import { evaluateLocally } from "@/lib/fallback-eval";
 import { pickFromBank, type BankEntry } from "@/lib/word-bank";
 
-const KEY = "voca-demo-v1";
+const KEY = "voca-demo-v2";
 
 type ActiveSet = {
   date: string;
@@ -121,16 +121,19 @@ function seedLibrary(domain: string, today: string): LibraryWord[] {
 
 export function startDemoDay(domain: string, today: string) {
   const current = readDemo();
-  if (current.active?.date === today) return current;
+  if (current.active?.date === today && current.active.evaluation) return current;
+  if (current.active?.date === today && current.active.domain === domain && !current.active.evaluation) {
+    return current;
+  }
 
   const library = current.library.length ? current.library : seedLibrary(domain, today);
   const due = library
-    .filter((word) => word.status !== "new" && word.nextReviewAt.slice(0, 10) <= today)
+    .filter((word) => word.domain === domain && word.status !== "new" && word.nextReviewAt.slice(0, 10) <= today)
     .sort((a, b) => a.nextReviewAt.localeCompare(b.nextReviewAt))
     .slice(0, 2);
   const fresh = pickFromBank(
     domain,
-    library.map((word) => word.term),
+    [...library.map((word) => word.term), ...due.map((word) => word.term)],
     Math.max(0, 5 - due.length),
     `${today}:${domain}`,
   );

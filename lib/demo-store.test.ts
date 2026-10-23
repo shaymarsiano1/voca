@@ -39,3 +39,18 @@ test("a demo day mixes two due words with three fresh ones", async () => {
   assert.ok(review.every((result) => result.interval_days === 8 && result.status === "learning"));
   assert.ok(fresh.every((result) => result.interval_days === 1 && result.review_label === "Will review tomorrow"));
 });
+
+test("an unfinished day follows the subject you pick", async () => {
+  memory.clear();
+  const { startDemoDay } = await import("./demo-store");
+  const today = "2026-10-23";
+  const software = startDemoDay("Software Engineering", today);
+  const security = startDemoDay("Security Engineering", today);
+  const first = software.active?.words.map((word) => word.term) ?? [];
+  const second = security.active?.words.map((word) => word.term) ?? [];
+
+  assert.equal(second.length, 5);
+  assert.notDeepEqual(first, second);
+  assert.ok(second.every((term) => !term.includes(" ")));
+  assert.ok(security.active?.words.every((word) => word.domain === "Security Engineering"));
+});

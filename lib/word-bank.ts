@@ -9,419 +9,479 @@ export type BankEntry = {
   scenario: string;
 };
 
+function word(
+  term: string,
+  partOfSpeech: string,
+  pronunciation: string,
+  definition: string,
+  mnemonic: string,
+  scenario: string,
+): BankEntry {
+  return { term, partOfSpeech, pronunciation, definition, mnemonic, scenario };
+}
+
 export const WORD_BANK: Record<DomainId, BankEntry[]> = {
   "Software Engineering": [
-    {
-      term: "Idempotent",
-      partOfSpeech: "adjective",
-      pronunciation: "/ˌaɪ.dəmˈpoʊ.tənt/",
-      definition:
-        "An operation is idempotent when repeating it with the same input leaves the system in the same state as doing it once.",
-      mnemonic:
-        "Idem-potent — אותה מנה, כמה פעמים שלא תזמין: התוצאה נשארת אחת.",
-      scenario:
-        "A payment API charges once for a given Idempotency-Key, even when the client retries the POST after a timeout.",
-    },
-    {
-      term: "Orthogonal",
-      partOfSpeech: "adjective",
-      pronunciation: "/ɔːrˈθɒɡ.ən.əl/",
-      definition:
-        "Two designs are orthogonal when changing one does not force a change in the other.",
-      mnemonic: "Ortho-gonal — זווית ישרה: שני צירים שלא מושכים זה את זה.",
-      scenario:
-        "A team ships a new authentication scheme without rewriting billing, because the modules do not share state.",
-    },
-    {
-      term: "Invariant",
-      partOfSpeech: "noun",
-      pronunciation: "/ɪnˈveə.ri.ənt/",
-      definition:
-        "A condition that must remain true before and after every operation on a component.",
-      mnemonic: "In-variant — אין וריאנט: הכלל לא משתנה בין הכניסה ליציאה.",
-      scenario:
-        "A ledger service refuses a transfer unless debits and credits still balance after the write.",
-    },
-    {
-      term: "Reentrant",
-      partOfSpeech: "adjective",
-      pronunciation: "/riːˈɛn.trənt/",
-      definition:
-        "Code is reentrant when it can be safely entered again before an earlier invocation has finished.",
-      mnemonic: "Re-enter — אפשר להיכנס שוב בלי שהכניסה הקודמת תנעל את הדלת.",
-      scenario:
-        "An async logging hook calls back into itself while the first call is still flushing a buffer.",
-    },
-    {
-      term: "Deterministic",
-      partOfSpeech: "adjective",
-      pronunciation: "/dɪˌtɜː.mɪˈnɪs.tɪk/",
-      definition:
-        "A process is deterministic when the same inputs and starting state always produce the same outputs.",
-      mnemonic: "Determine — הגורל נקבע מראש: אין קובייה באמצע החישוב.",
-      scenario:
-        "A replayable event reducer rebuilds the same account balance from the same log on every instance.",
-    },
-    {
-      term: "Cohesion",
-      partOfSpeech: "noun",
-      pronunciation: "/kəʊˈhiː.ʒən/",
-      definition: "How strongly the responsibilities inside one module belong together.",
-      mnemonic: "Co-here — הדברים כאן שייכים זה לזה, לא אוסף מקרי של משימות.",
-      scenario:
-        "An invoice module that only owns billing rules is more cohesive than one that also renders PDFs and sends mail.",
-    },
+    word(
+      "Latency",
+      "noun",
+      "/ˈleɪ.tən.si/",
+      "The time a system takes to respond to a single request.",
+      "Late — כמה זמן לוקח עד שהתשובה מגיעה.",
+      "A search box feels slow when each keystroke waits 400 milliseconds for a response.",
+    ),
+    word(
+      "Throughput",
+      "noun",
+      "/ˈθruː.pʊt/",
+      "How much work a system finishes in a given period of time.",
+      "Through-put — כמה עובר דרך הצינור בדקה.",
+      "The API handles two thousand requests a second during checkout.",
+    ),
+    word(
+      "Refactor",
+      "verb",
+      "/ˌriːˈfæk.tər/",
+      "To change the structure of code without changing what it does.",
+      "Re-factor — מסדרים מחדש, ההתנהגות נשארת.",
+      "The team splits one long function into smaller ones and the tests still pass.",
+    ),
+    word(
+      "Deploy",
+      "verb",
+      "/dɪˈplɔɪ/",
+      "To release a version of software so people can use it.",
+      "Deploy — מוציאים את הגרסה החוצה.",
+      "The new login screen goes live after the afternoon release.",
+    ),
+    word(
+      "Rollback",
+      "noun",
+      "/ˈroʊl.bæk/",
+      "A return to the previous version after a release causes trouble.",
+      "Roll back — מגלגלים אחורה לגרסה שעבדה.",
+      "Error rates jump after a release, so the team restores yesterday's build.",
+    ),
+    word(
+      "Cache",
+      "noun",
+      "/kæʃ/",
+      "A nearby copy of data kept so the next read does not start from scratch.",
+      "Cache — עותק קרוב, כדי לא ללכת רחוק שוב.",
+      "A profile page is stored for a minute so every refresh does not hit the database.",
+    ),
+    word(
+      "Runtime",
+      "noun",
+      "/ˈrʌn.taɪm/",
+      "The period when a program is actually running, not when it is being written.",
+      "Run-time — הזמן שבו התוכנית רצה.",
+      "A missing setting only shows up at runtime, after the service starts.",
+    ),
+    word(
+      "Compile",
+      "verb",
+      "/kəmˈpaɪl/",
+      "To turn source code into a form the machine can run.",
+      "Compile — מקמפלים את הטקסט למשהו שאפשר להריץ.",
+      "The build fails to compile because a type no longer matches.",
+    ),
   ],
   "Distributed Systems": [
-    {
-      term: "Backpressure",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈbækˌpreʃ.ər/",
-      definition:
-        "A signal from a slower consumer that tells upstream producers to slow or stop sending.",
-      mnemonic: "Back-pressure — לחץ שחוזר אחורה בצינור כדי שהצינור לא יתפוצץ.",
-      scenario:
-        "A gRPC handler stops reading when its downstream queue is full, so the sender blocks instead of buffering without a limit.",
-    },
-    {
-      term: "Quorum",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈkwɔː.rəm/",
-      definition:
-        "The minimum number of nodes that must agree before a distributed decision is accepted.",
-      mnemonic: "Quorum — כמו מניין: בלי רוב מוסכם אין החלטה.",
-      scenario: "A Raft cluster commits a log entry only after a majority of replicas acknowledge it.",
-    },
-    {
-      term: "Linearizability",
-      partOfSpeech: "noun",
-      pronunciation: "/ˌlɪn.i.ər.aɪ.zəˈbɪl.ə.ti/",
-      definition:
-        "Every operation appears to take effect instantly at a single point between its start and end, in one global order.",
-      mnemonic: "Linear — כולם רואים שורה אחת של אירועים, בלי ענפים סותרים.",
-      scenario:
-        "A lock service makes a successful acquire immediately visible to every other client, with no stale owner.",
-    },
-    {
-      term: "Split-brain",
-      partOfSpeech: "noun",
-      pronunciation: "/ˌsplɪt ˈbreɪn/",
-      definition:
-        "A failure in which a cluster divides into parts that each believe they are the authority.",
-      mnemonic: "Split-brain — המוח נחצה: שני צדדים בטוחים שהם הבוס.",
-      scenario:
-        "Two database primaries accept writes during a network partition and later cannot reconcile the rows.",
-    },
-    {
-      term: "Thundering herd",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈθʌn.dər.ɪŋ hɜːrd/",
-      definition:
-        "Many waiters wake at once and stampede a resource that has just become available.",
-      mnemonic: "Thunder — רעם: כולם מתעוררים יחד ורצים לאותה דלת.",
-      scenario:
-        "A cache key expires and thousands of app servers miss together, all querying the primary database.",
-    },
-    {
-      term: "Fencing token",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈfen.sɪŋ ˈtoʊ.kən/",
-      definition:
-        "A monotonically increasing number that lets storage reject writes from a stale leader.",
-      mnemonic: "Fence — גדר: הטוקן סוגר את השער בפני מנהיג שכבר הודח.",
-      scenario:
-        "After a lease expires, the old writer still flushes, and the disk rejects it because its token is older.",
-    },
+    word(
+      "Consensus",
+      "noun",
+      "/kənˈsen.səs/",
+      "Agreement among separate machines on one shared decision.",
+      "Consent — כולם מסכימים על אותה עובדה.",
+      "Three servers agree which one is allowed to accept writes.",
+    ),
+    word(
+      "Replica",
+      "noun",
+      "/ˈrep.lɪ.kə/",
+      "A copy of the same data kept on another machine.",
+      "Replica — עותק נוסף, לא המקור.",
+      "A second database copy takes over if the first machine goes down.",
+    ),
+    word(
+      "Partition",
+      "noun",
+      "/pɑːˈtɪʃ.ən/",
+      "A split that stops some machines from talking to the others.",
+      "Partition — המערכת נחתכת לחלקים שלא שומעים זה את זה.",
+      "A network cut leaves two groups of servers unable to see each other.",
+    ),
+    word(
+      "Timeout",
+      "noun",
+      "/ˈtaɪm.aʊt/",
+      "The moment a wait is abandoned because an answer took too long.",
+      "Time-out — נגמר הזמן, מפסיקים לחכות.",
+      "The client gives up after three seconds when the service never replies.",
+    ),
+    word(
+      "Retry",
+      "verb",
+      "/ˌriːˈtraɪ/",
+      "To send a request again after a failure or a timeout.",
+      "Re-try — מנסים עוד פעם.",
+      "The worker sends the same job again after the first attempt fails.",
+    ),
+    word(
+      "Quorum",
+      "noun",
+      "/ˈkwɔː.rəm/",
+      "The minimum number of machines that must agree before a decision counts.",
+      "Quorum — בלי רוב אין החלטה.",
+      "A write is accepted only after two of three copies confirm it.",
+    ),
+    word(
+      "Failover",
+      "noun",
+      "/ˈfeɪlˌoʊ.vər/",
+      "The switch to a standby machine when the active one fails.",
+      "Fail-over — עוברים לגיבוי כשהראשי נופל.",
+      "Traffic moves to the standby region when the primary region stops answering.",
+    ),
+    word(
+      "Backlog",
+      "noun",
+      "/ˈbæk.lɒɡ/",
+      "Work that has arrived but has not been processed yet.",
+      "Back-log — תור של עבודה שמחכה.",
+      "Messages pile up in the queue while the consumers are down.",
+    ),
   ],
   "Cloud Architecture": [
-    {
-      term: "Control plane",
-      partOfSpeech: "noun",
-      pronunciation: "/kənˈtroʊl pleɪn/",
-      definition:
-        "The part of a system that decides configuration and policy, separate from the path that carries user traffic.",
-      mnemonic: "Control plane — המגדל, לא המטוסים: מחליטים כאן, טסים שם.",
-      scenario:
-        "The Kubernetes API server stores desired replica counts, while each kubelet does the pod work.",
-    },
-    {
-      term: "Blast radius",
-      partOfSpeech: "noun",
-      pronunciation: "/blæst ˈreɪ.di.əs/",
-      definition: "How much of a system one failure or bad change can damage.",
-      mnemonic: "Blast — פיצוץ: הרדיוס הוא עד איפה הרסיסים מגיעים.",
-      scenario: "A bad deploy limited to one cell takes down a single shard instead of every tenant.",
-    },
-    {
-      term: "Cold start",
-      partOfSpeech: "noun",
-      pronunciation: "/koʊld stɑːrt/",
-      definition:
-        "The extra latency of creating a fresh runtime before it can serve the first request.",
-      mnemonic: "Cold — המנוע כבוי, וההתנעה הראשונה לוקחת זמן.",
-      scenario:
-        "A scale-to-zero function pays hundreds of milliseconds to boot an isolate when traffic returns.",
-    },
-    {
-      term: "Sidecar",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈsaɪd.kɑːr/",
-      definition:
-        "A helper process deployed beside an application to handle a cross-cutting concern.",
-      mnemonic: "Side-car — הקרון בצד האופנוע: נוסע צמוד, לא מחליף את הנהג.",
-      scenario:
-        "An Envoy proxy beside each service terminates mTLS so application code never handles certificates.",
-    },
-    {
-      term: "Canary",
-      partOfSpeech: "noun",
-      pronunciation: "/kəˈneə.ri/",
-      definition:
-        "A release that sends a small slice of real traffic to a new version before the full rollout.",
-      mnemonic: "Canary — הקנרית במכרה: אם היא נחנקת, עוצרים לפני כולם.",
-      scenario:
-        "Five percent of checkout requests hit the new pricing service while the error budget is watched.",
-    },
-    {
-      term: "Drift",
-      partOfSpeech: "noun",
-      pronunciation: "/drɪft/",
-      definition: "The gap between declared infrastructure and what is actually running.",
-      mnemonic: "Drift — סחיפה: מה שכתוב בקוד כבר לא מה שחי בענן.",
-      scenario:
-        "Someone opened a security group in the console, so the next plan shows a change nobody committed.",
-    },
+    word(
+      "Outage",
+      "noun",
+      "/ˈaʊ.tɪdʒ/",
+      "A period when a service is unavailable to its users.",
+      "Outage — השירות בחוץ, אי אפשר להשתמש בו.",
+      "The status page shows an outage when checkout is down for twenty minutes.",
+    ),
+    word(
+      "Region",
+      "noun",
+      "/ˈriː.dʒən/",
+      "A geographic area where a cloud provider runs a group of data centers.",
+      "Region — אזור בעולם שבו השרתים יושבים.",
+      "European customers are served from a region in Frankfurt.",
+    ),
+    word(
+      "Scale",
+      "verb",
+      "/skeɪl/",
+      "To add or remove capacity as demand changes.",
+      "Scale — מגדילים או מקטינים לפי העומס.",
+      "The service adds more instances when traffic rises on Friday.",
+    ),
+    word(
+      "Tenant",
+      "noun",
+      "/ˈten.ənt/",
+      "One customer whose data and traffic are kept apart from the others.",
+      "Tenant — דייר: לקוח אחד בתוך בניין משותף.",
+      "Each company is a tenant, and one company cannot read another's files.",
+    ),
+    word(
+      "Quota",
+      "noun",
+      "/ˈkwəʊ.tə/",
+      "A limit on how much of a resource an account may use.",
+      "Quota — מכסה: עד כאן מותר.",
+      "The account cannot launch more machines once it hits its quota.",
+    ),
+    word(
+      "Cluster",
+      "noun",
+      "/ˈklʌs.tər/",
+      "A group of machines that work together as one system.",
+      "Cluster — צביר מכונות שעובדות כיחידה.",
+      "The application runs across a cluster of twelve machines.",
+    ),
+    word(
+      "Rollout",
+      "noun",
+      "/ˈroʊl.aʊt/",
+      "The gradual release of a change to more users or machines.",
+      "Roll-out — פורסים את השינוי בהדרגה.",
+      "The new version reaches ten percent of users before everyone else.",
+    ),
+    word(
+      "Uptime",
+      "noun",
+      "/ˈʌp.taɪm/",
+      "The share of time a service is available and working.",
+      "Up-time — כמה זמן השירות היה למעלה.",
+      "The team aims for 99.9 percent uptime over a month.",
+    ),
   ],
   Logic: [
-    {
-      term: "Contrapositive",
-      partOfSpeech: "noun",
-      pronunciation: "/ˌkɒn.trəˈpɒz.ə.tɪv/",
-      definition:
-        "The contrapositive of “if P then Q” is “if not Q then not P”, and it is logically equivalent.",
-      mnemonic: "Contra — הופכים את שני הצדדים ושוללים, והמשפט נשאר נאמן.",
-      scenario:
-        "“If the build is green, the artifact exists” is checked by showing a missing artifact means the build was not green.",
-    },
-    {
-      term: "Soundness",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈsaʊnd.nəs/",
-      definition: "An argument is sound when it is valid and its premises are actually true.",
-      mnemonic: "Sound — לא רק שהצורה נכונה, גם העובדות מחזיקות.",
-      scenario:
-        "A proof that a scheduler is safe is sound only if its assumptions about atomic disk writes hold in production.",
-    },
-    {
-      term: "Vacuous",
-      partOfSpeech: "adjective",
-      pronunciation: "/ˈvæk.ju.əs/",
-      definition:
-        "A vacuous truth holds because there are no cases that could disprove the universal claim.",
-      mnemonic: "Vacuum — אין דוגמאות נגדיות כי אין דוגמאות בכלל.",
-      scenario:
-        "“Every message in an empty queue is acknowledged” is true, and it can hide a publisher that never sent anything.",
-    },
-    {
-      term: "Non sequitur",
-      partOfSpeech: "noun",
-      pronunciation: "/ˌnɒn ˈsek.wɪ.tər/",
-      definition: "A conclusion that does not follow from the premises offered.",
-      mnemonic: "Non sequitur — המסקנה לא הולכת אחרי מה שנאמר.",
-      scenario:
-        "“Latency rose after the deploy, therefore the migration corrupted data” skips every other cause.",
-    },
-    {
-      term: "Sufficient",
-      partOfSpeech: "adjective",
-      pronunciation: "/səˈfɪʃ.ənt/",
-      definition:
-        "A sufficient condition guarantees the result when it is true, even if other paths could also cause it.",
-      mnemonic: "Sufficient — מספיק לבד, לא חייב להיות הדרך היחידה.",
-      scenario:
-        "A failing health check is sufficient to remove a pod, but a rollout can remove one too.",
-    },
-    {
-      term: "Counterexample",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈkaʊn.tər.ɪɡˌzæm.pəl/",
-      definition: "A specific case that shows a general claim is false.",
-      mnemonic: "Counter — דוגמה אחת שמפילה את הכלל.",
-      scenario:
-        "One interleaving where two transfers lose an update falsifies the claim that the lock is correct.",
-    },
+    word(
+      "Premise",
+      "noun",
+      "/ˈprem.ɪs/",
+      "A statement that an argument takes as its starting point.",
+      "Premise — נקודת הפתיחה של הטיעון.",
+      "The proof starts from the premise that every request has an identifier.",
+    ),
+    word(
+      "Assumption",
+      "noun",
+      "/əˈsʌmp.ʃən/",
+      "Something treated as true without being shown in this argument.",
+      "Assume — מניחים שזה נכון, בלי להוכיח כאן.",
+      "The design assumes the clock on every machine is roughly right.",
+    ),
+    word(
+      "Valid",
+      "adjective",
+      "/ˈvæl.ɪd/",
+      "An argument is valid when the conclusion must follow if the premises are true.",
+      "Valid — אם ההנחות נכונות, המסקנה חייבת לבוא.",
+      "The reasoning is valid even if one of the facts later turns out to be wrong.",
+    ),
+    word(
+      "Contradiction",
+      "noun",
+      "/ˌkɒn.trəˈdɪk.ʃən/",
+      "Two claims that cannot both be true at the same time.",
+      "Contra — שתי טענות שמתנגשות.",
+      "The log says the write succeeded and also that the disk was full.",
+    ),
+    word(
+      "Inference",
+      "noun",
+      "/ˈɪn.fər.əns/",
+      "A conclusion drawn from what is already known.",
+      "Infer — מסיקים ממה שכבר ידוע.",
+      "From three failed health checks, the system infers that the instance is down.",
+    ),
+    word(
+      "Proof",
+      "noun",
+      "/pruːf/",
+      "A chain of reasons that shows a claim must be true.",
+      "Proof — שרשרת נימוקים, לא רק תחושה.",
+      "The author gives a proof that the lock cannot be held by two callers at once.",
+    ),
+    word(
+      "Constraint",
+      "noun",
+      "/kənˈstreɪnt/",
+      "A limit that a solution is required to respect.",
+      "Constraint — מגבלה שאסור לחצות.",
+      "The budget is a constraint: the design cannot add another database.",
+    ),
+    word(
+      "Exception",
+      "noun",
+      "/ɪkˈsep.ʃən/",
+      "A case that does not follow the general rule.",
+      "Except — המקרה שלא נכנס לכלל.",
+      "Empty input is an exception to the rule that every batch has a header.",
+    ),
   ],
   "API Design": [
-    {
-      term: "Tolerant Reader",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈtɒl.ər.ənt ˈriː.dər/",
-      definition:
-        "A consumer that accepts input a bit broader than the strict contract so old and new senders both work.",
-      mnemonic: "Tolerant — הקורא לא נשבר משדה שהוא לא מכיר.",
-      scenario:
-        "A consumer ignores unknown JSON fields so a producer can add a property without a lockstep deploy.",
-    },
-    {
-      term: "Idempotency-Key",
-      partOfSpeech: "noun",
-      pronunciation: "/ˌaɪ.dəmˈpɒ.tən.si kiː/",
-      definition:
-        "A client-supplied identifier that lets the server recognize retries of the same request.",
-      mnemonic: "Key — אותו מפתח פותח את אותה פעולה, לא פעולה חדשה.",
-      scenario:
-        "A mobile client resends a transfer with the same key after a lost response and receives the original receipt.",
-    },
-    {
-      term: "Cursor",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈkɜː.sər/",
-      definition:
-        "An opaque position marker used to fetch the next page without skipping or repeating items as writes arrive.",
-      mnemonic: "Cursor — סמן על השורה, לא מספר עמוד שיכול לזוז.",
-      scenario:
-        "An activity feed returns a cursor after the last event id so new inserts at the top do not shift page two.",
-    },
-    {
-      term: "Deprecation",
-      partOfSpeech: "noun",
-      pronunciation: "/ˌdep.rəˈkeɪ.ʃən/",
-      definition: "A formal warning that an interface still works but is scheduled to disappear.",
-      mnemonic: "Deprecation — מכריזים שהשער ייסגר, אבל הוא עוד פתוח.",
-      scenario: "A Sunset header tells clients the v1 route will stop serving after a published date.",
-    },
-    {
-      term: "Backoff",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈbæk.ɒf/",
-      definition: "A retry delay that grows so a failing dependency has room to recover.",
-      mnemonic: "Back-off — צעד אחורה: כל ניסיון מחכה יותר לפני שדופקים שוב.",
-      scenario:
-        "Workers retry a 429 with exponential delays and jitter instead of hammering the rate limiter.",
-    },
-    {
-      term: "Webhook",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈweb.hʊk/",
-      definition:
-        "An HTTP callback a provider sends when something happens, so the client does not have to poll.",
-      mnemonic: "Hook — קרס: האירוע תופס אותך, אתה לא יוצא לבדוק כל דקה.",
-      scenario:
-        "A billing provider POSTs when an invoice is paid, and you verify the signature before updating the account.",
-    },
+    word(
+      "Endpoint",
+      "noun",
+      "/ˈend.pɔɪnt/",
+      "A specific address where a client asks a service to do one thing.",
+      "End-point — הכתובת שאליה פונים.",
+      "The client calls the invoices endpoint to list unpaid bills.",
+    ),
+    word(
+      "Payload",
+      "noun",
+      "/ˈpeɪ.ləʊd/",
+      "The actual data carried in a request or a response.",
+      "Payload — המטען עצמו, לא המעטפת.",
+      "The payload is a JSON object with the user's name and email.",
+    ),
+    word(
+      "Schema",
+      "noun",
+      "/ˈskiː.mə/",
+      "The agreed shape of the data: which fields exist and what they mean.",
+      "Schema — התבנית של הנתונים.",
+      "The schema requires an email and rejects a request that omits it.",
+    ),
+    word(
+      "Version",
+      "noun",
+      "/ˈvɜː.ʃən/",
+      "A numbered form of an interface so old and new clients can coexist.",
+      "Version — מספר של החוזה, כדי שלא כולם יזוזו יחד.",
+      "Version two adds a field while version one keeps working.",
+    ),
+    word(
+      "Request",
+      "noun",
+      "/rɪˈkwest/",
+      "A message a client sends to ask a service for something.",
+      "Request — הבקשה שהלקוח שולח.",
+      "The request asks the service to create one order.",
+    ),
+    word(
+      "Response",
+      "noun",
+      "/rɪˈspɒns/",
+      "The message a service sends back after a request.",
+      "Response — התשובה שחוזרת.",
+      "The response includes the new order id and a status of created.",
+    ),
+    word(
+      "Header",
+      "noun",
+      "/ˈhed.ər/",
+      "A named piece of information sent alongside the body of a message.",
+      "Header — שורה מעל התוכן, עם פרט נוסף.",
+      "The authorization header carries the token.",
+    ),
+    word(
+      "Contract",
+      "noun",
+      "/ˈkɒn.trækt/",
+      "The promise of what a caller may send and what it will get back.",
+      "Contract — החוזה בין מי שקורא למי שעונה.",
+      "The contract says a missing id returns an error, not an empty page.",
+    ),
   ],
   "Security Engineering": [
-    {
-      term: "Least privilege",
-      partOfSpeech: "noun",
-      pronunciation: "/liːst ˈprɪv.ə.lɪdʒ/",
-      definition: "Granting only the access a task requires, and nothing kept “just in case”.",
-      mnemonic: "Least — המינימום: המפתח פותח חדר אחד, לא את כל הבניין.",
-      scenario: "A deploy role can push to one registry and cannot read production secrets.",
-    },
-    {
-      term: "Attack surface",
-      partOfSpeech: "noun",
-      pronunciation: "/əˈtæk ˈsɜː.fɪs/",
-      definition: "Every place an adversary can try to enter or influence the system.",
-      mnemonic: "Surface — כל דלת, פורט ושדה קלט שחשופים למגע.",
-      scenario: "Disabling an unused admin port and a debug endpoint shrinks what a scanner can touch.",
-    },
-    {
-      term: "Confused deputy",
-      partOfSpeech: "noun",
-      pronunciation: "/kənˈfjuːzd ˈdep.jə.ti/",
-      definition:
-        "A component tricked into misusing its authority on behalf of a less privileged caller.",
-      mnemonic: "Deputy — סגן מבולבל: מישהו עם סמכות פועל בשביל מי שאין לו.",
-      scenario:
-        "A metadata service lets a public VM fetch cloud credentials because the request looks internal.",
-    },
-    {
-      term: "Fail closed",
-      partOfSpeech: "verb",
-      pronunciation: "/feɪl kloʊzd/",
-      definition: "To deny access when an error occurs, rather than allowing it.",
-      mnemonic: "Closed — כשיש ספק, הדלת נעולה ולא פתוחה.",
-      scenario: "If the policy engine times out, the gateway rejects the request instead of forwarding it.",
-    },
-    {
-      term: "Non-repudiation",
-      partOfSpeech: "noun",
-      pronunciation: "/ˌnɒn.rɪˌpjuː.diˈeɪ.ʃən/",
-      definition:
-        "The property that a party cannot credibly deny an action because the evidence is strong.",
-      mnemonic: "Non-repudiation — אי אפשר להכחיש: החתימה נשארת.",
-      scenario: "Signed audit events show which operator approved a production change.",
-    },
-    {
-      term: "Salt",
-      partOfSpeech: "noun",
-      pronunciation: "/sɔːlt/",
-      definition:
-        "A unique random value mixed into a password hash so identical passwords do not produce identical hashes.",
-      mnemonic: "Salt — אותה מנה, תיבול שונה: הטבלה המוכנה מראש לא עובדת.",
-      scenario:
-        "A leaked hash database cannot be matched with one precomputed table because every user had a distinct salt.",
-    },
+    word(
+      "Token",
+      "noun",
+      "/ˈtəʊ.kən/",
+      "A short-lived proof that a caller is allowed to act as a certain user.",
+      "Token — פתק כניסה זמני, לא הסיסמה עצמה.",
+      "The app sends a token with each request instead of the password.",
+    ),
+    word(
+      "Encrypt",
+      "verb",
+      "/ɪnˈkrɪpt/",
+      "To transform data so only someone with the key can read it.",
+      "Encrypt — הופכים את התוכן לבלתי קריא בלי מפתח.",
+      "The disk encrypts customer files before they are stored.",
+    ),
+    word(
+      "Secret",
+      "noun",
+      "/ˈsiː.krət/",
+      "A value, such as a password or a key, that must stay hidden.",
+      "Secret — ערך שאסור שיופיע בפומבי.",
+      "The database password is a secret and does not belong in the source code.",
+    ),
+    word(
+      "Permission",
+      "noun",
+      "/pəˈmɪʃ.ən/",
+      "A specific action an identity is allowed to perform.",
+      "Permit — רשות לפעולה אחת, לא לכל דבר.",
+      "This account has permission to read invoices but not to delete them.",
+    ),
+    word(
+      "Audit",
+      "noun",
+      "/ˈɔː.dɪt/",
+      "A record of who did what, kept so actions can be reviewed later.",
+      "Audit — יומן של מי נגע ובמה.",
+      "The audit shows which operator downloaded the customer list.",
+    ),
+    word(
+      "Breach",
+      "noun",
+      "/briːtʃ/",
+      "An incident in which protected data or access is exposed.",
+      "Breach — פריצה: משהו שהיה סגור נפתח.",
+      "A breach exposes email addresses that should have stayed private.",
+    ),
+    word(
+      "Vulnerability",
+      "noun",
+      "/ˌvʌl.nər.əˈbɪl.ə.ti/",
+      "A weakness an attacker could use to cause harm.",
+      "Vulnerable — נקודת תורפה שאפשר לנצל.",
+      "An outdated library is a vulnerability because a public exploit already exists.",
+    ),
+    word(
+      "Authenticate",
+      "verb",
+      "/ɔːˈθen.tɪ.keɪt/",
+      "To check that a caller really is who they claim to be.",
+      "Authentic — בודקים שזה באמת הם.",
+      "The service authenticates the user before it shows their account.",
+    ),
   ],
   "Data Engineering": [
-    {
-      term: "Cardinality",
-      partOfSpeech: "noun",
-      pronunciation: "/ˌkɑː.dɪˈnæl.ə.ti/",
-      definition:
-        "The number of distinct values in a dimension. High cardinality makes storage and queries more expensive.",
-      mnemonic: "Cardinal — כמה ערכים ייחודיים יש, לא כמה שורות.",
-      scenario: "Putting a raw user id on every metric label explodes a time-series database.",
-    },
-    {
-      term: "Watermark",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈwɔː.tə.mɑːk/",
-      definition:
-        "A timestamp the pipeline believes event time has reached, used to decide when a window can close.",
-      mnemonic: "Watermark — קו המים: מתחתיו כבר לא מחכים לאירועים ישנים.",
-      scenario:
-        "A five-minute aggregation closes a window once the watermark passes its end, even if a few events are missing.",
-    },
-    {
-      term: "Tombstone",
-      partOfSpeech: "noun",
-      pronunciation: "/ˈtuːm.stəʊn/",
-      definition:
-        "A marker that records a deletion so replicas and compacted logs do not resurrect the record.",
-      mnemonic: "Tombstone — מצבה: השורה מתה, והסימן מונע ממנה לקום.",
-      scenario:
-        "A compacted log keeps a null record so a restarted consumer still learns the key was deleted.",
-    },
-    {
-      term: "Compaction",
-      partOfSpeech: "noun",
-      pronunciation: "/kəmˈpæk.ʃən/",
-      definition: "Rewriting stored data to drop obsolete versions and keep the latest state cheaper to read.",
-      mnemonic: "Compact — זורקים טיוטות ישנות ומשאירים את הגרסה שקובעת.",
-      scenario: "An LSM store merges files so a read does not scan every historical overwrite of a key.",
-    },
-    {
-      term: "Late event",
-      partOfSpeech: "noun",
-      pronunciation: "/leɪt ɪˈvent/",
-      definition: "A record that arrives after the window it belongs to has already been computed.",
-      mnemonic: "Late — האירוע מגיע אחרי שהחלון כבר נסגר.",
-      scenario:
-        "A mobile client uploads a click an hour later, and the daily rollup has to decide whether to revise yesterday.",
-    },
-    {
-      term: "Partition key",
-      partOfSpeech: "noun",
-      pronunciation: "/pɑːˈtɪʃ.ən kiː/",
-      definition:
-        "The value that chooses which shard stores a record, so related data lands together and load can spread.",
-      mnemonic: "Partition — המפתח קובע באיזה חדר הרשומה גרה.",
-      scenario:
-        "Keying by tenant keeps one customer's events together, but a giant tenant becomes a hot partition.",
-    },
+    word(
+      "Query",
+      "noun",
+      "/ˈkwɪə.ri/",
+      "A question asked of a data store, written so it can return matching records.",
+      "Query — שאלה אל הנתונים.",
+      "The query returns orders placed in the last seven days.",
+    ),
+    word(
+      "Index",
+      "noun",
+      "/ˈɪn.deks/",
+      "A structure that lets a store find matching rows without scanning everything.",
+      "Index — מפתח חיפוש, כמו אינדקס בספר.",
+      "An index on email makes the lookup fast.",
+    ),
+    word(
+      "Batch",
+      "noun",
+      "/bætʃ/",
+      "A group of records processed together, rather than one by one as they arrive.",
+      "Batch — חבילה של רשומות בבת אחת.",
+      "The nightly batch rebuilds yesterday's sales totals.",
+    ),
+    word(
+      "Stream",
+      "noun",
+      "/striːm/",
+      "A continuous flow of records handled as they arrive.",
+      "Stream — זרם שלא מחכה לסוף היום.",
+      "Clicks enter a stream and update the dashboard within seconds.",
+    ),
+    word(
+      "Dataset",
+      "noun",
+      "/ˈdeɪ.tə.set/",
+      "A named collection of related records used together.",
+      "Data-set — אוסף נתונים עם שם.",
+      "The training dataset holds a year of support tickets.",
+    ),
+    word(
+      "Aggregate",
+      "verb",
+      "/ˈæɡ.rɪ.ɡeɪt/",
+      "To combine many records into one summary value.",
+      "Aggregate — מאחדים הרבה שורות למספר אחד.",
+      "The job aggregates daily orders into one revenue figure.",
+    ),
+    word(
+      "Ingest",
+      "verb",
+      "/ɪnˈdʒest/",
+      "To take data in from an outside source and store it for later use.",
+      "Ingest — בולעים את הנתונים פנימה.",
+      "The pipeline ingests files from the partner every hour.",
+    ),
+    word(
+      "Snapshot",
+      "noun",
+      "/ˈsnæp.ʃɒt/",
+      "A copy of data as it was at one moment.",
+      "Snap-shot — תמונה של הרגע, לא של מה שיבוא אחר כך.",
+      "A snapshot of the table is taken before the migration starts.",
+    ),
   ],
 };
 
@@ -447,13 +507,7 @@ function mulberry32(seed: number) {
 
 export function pickFromBank(domain: string, exclude: string[], count: number, seed?: string) {
   const blocked = new Set(exclude.map((term) => term.toLowerCase()));
-  const primary = (WORD_BANK[domain as DomainId] ?? []).filter(
-    (entry) => !blocked.has(entry.term.toLowerCase()),
-  );
-  const rest = Object.entries(WORD_BANK).flatMap(([name, entries]) =>
-    name === domain ? [] : entries.filter((entry) => !blocked.has(entry.term.toLowerCase())),
-  );
-  const pool = [...primary, ...rest];
+  const pool = (WORD_BANK[domain as DomainId] ?? []).filter((entry) => !blocked.has(entry.term.toLowerCase()));
   const random = seed ? mulberry32(hashSeed(seed)) : Math.random;
   for (let index = pool.length - 1; index > 0; index -= 1) {
     const swap = Math.floor(random() * (index + 1));

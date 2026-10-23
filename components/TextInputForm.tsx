@@ -30,7 +30,7 @@ export function TextInputForm({
           value={transcript}
           disabled={disabled}
           onChange={(event) => onTranscript(event.target.value)}
-          placeholder="The transcript lands here. You can also type the explanation."
+          placeholder="Your explanation appears here after Transcribe. You can also type it."
           className={cn(field, "min-h-28")}
         />
       </label>

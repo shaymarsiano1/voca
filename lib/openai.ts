@@ -53,8 +53,7 @@ function cleanTerm(term: string) {
 }
 
 function acceptable(term: string, exclude: Set<string>) {
-  if (term.length < 3 || term.length > 48) return false;
-  if (!/^[A-Za-z][A-Za-z0-9 +./-]*$/.test(term)) return false;
+  if (!/^[A-Za-z]{4,18}$/.test(term)) return false;
   return !exclude.has(term.toLowerCase());
 }
 
@@ -75,8 +74,9 @@ export async function generateTerms(
         content: [
           "You write technical English vocabulary for software engineers at CEFR B2/C1.",
           `Generate exactly ${count} terms in the requested domain.`,
-          "Prefer precise architectural or engineering terms over beginner words such as bug, server, code, app, function, or variable.",
-          "Each term is 1-3 words and already used in industry.",
+          "Each term is exactly one English word. Never a phrase, a hyphenated compound, or a proper name.",
+          "Choose words a working engineer already hears, such as latency, throughput, quorum, or payload.",
+          "Avoid beginner words such as bug, server, code, app, function, or variable.",
           "Vary parts of speech.",
           "Do not repeat or lightly rephrase any excluded term.",
           "pronunciation is IPA.",

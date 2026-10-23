@@ -171,7 +171,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
   const capture = useCallback(
     async (blob: Blob) => {
       if (mode === "demo") {
-        toast("Preview mode keeps audio on this device. Type the explanation, or sign in to use Whisper.");
+        toast("This preview can't transcribe. Type what you said in the box below.");
         return;
       }
       setTranscribing(true);
@@ -309,7 +309,8 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                   <p className="font-mono text-xs text-mute">{today ? formatLongDate(today) : "Today"}</p>
                   <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Today&apos;s five</h1>
                   <p className="mt-2 text-sm leading-6 text-mute">
-                    Up to two are due. The rest are new. Speak or type, in Hebrew or English.
+                    Pick one subject, then start. You get five words from that subject. A different subject is a
+                    different five.
                   </p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -362,13 +363,28 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                     <span className="text-sky-700">{freshCount} new</span>
                   </p>
                 </div>
+                <button
+                  type="button"
+                  className="text-sm text-accent"
+                  onClick={() => {
+                    setPhase("ready");
+                    setTab("today");
+                  }}
+                >
+                  Change subject
+                </button>
                 <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-sheet">
                   {payload.words.map((word, index) => (
                     <WordCard key={word.id} word={word} index={index} />
                   ))}
                 </div>
                 <div className="space-y-5">
-                  <AudioRecorder disabled={transcribing} transcribing={transcribing} onCapture={(blob) => void capture(blob)} />
+                  <AudioRecorder
+                    disabled={transcribing}
+                    transcribing={transcribing}
+                    preview={mode === "demo"}
+                    onTranscribe={(blob) => void capture(blob)}
+                  />
                   <TextInputForm
                     transcript={transcript}
                     onTranscript={setTranscript}

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LoaderCircle, Mic, RotateCcw, Square } from "lucide-react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { cn } from "@/lib/cn";
+import { buttonPrimary } from "@/lib/ui";
 
 function formatTime(ms: number) {
   const total = Math.floor(ms / 1000);
@@ -15,13 +16,16 @@ function formatTime(ms: number) {
 export function AudioRecorder({
   disabled = false,
   transcribing = false,
-  onCapture,
+  preview = false,
+  onTranscribe,
 }: {
   disabled?: boolean;
   transcribing?: boolean;
-  onCapture: (blob: Blob) => void;
+  preview?: boolean;
+  onTranscribe: (blob: Blob) => void;
 }) {
   const recorder = useAudioRecorder();
+  const [take, setTake] = useState<Blob | null>(null);
   const { start, stop, status } = recorder;
   const recording = status === "recording";
 
@@ -35,22 +39,23 @@ export function AudioRecorder({
       event.preventDefault();
       if (recording) {
         void stop().then((blob) => {
-          if (blob) onCapture(blob);
+          setTake(blob);
         });
       } else {
+        setTake(null);
         void start();
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [disabled, onCapture, recording, start, stop, transcribing]);
+  }, [disabled, recording, start, stop, transcribing]);
 
   async function toggle() {
     if (recording) {
-      const blob = await recorder.stop();
-      if (blob) onCapture(blob);
+      setTake(await recorder.stop());
       return;
     }
+    setTake(null);
     await recorder.start();
   }
 
@@ -79,7 +84,7 @@ export function AudioRecorder({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-medium text-ink">
-              {transcribing ? "Transcribing" : recording ? "Listening" : "Record"}
+              {transcribing ? "Transcribing" : recording ? "Tap stop" : "Tap to record"}
             </p>
             <p className="font-mono text-xs tabular-nums text-mute">{formatTime(recorder.elapsedMs)}</p>
           </div>
@@ -94,7 +99,31 @@ export function AudioRecorder({
           </div>
         </div>
       </div>
-      <p className="text-xs text-mute">Hebrew and English together. Space to {recording ? "stop" : "start"}.</p>
+      <p className="text-xs leading-5 text-mute">
+        {recording
+          ? "Explain the five words, in Hebrew or English. Tap the square when you finish."
+          : recorder.audioUrl
+            ? "Tap Transcribe. The words land in the box below, and you can edit them."
+            : "Tap the microphone, say what the words mean, then tap Transcribe."}
+      </p>
+      {recorder.audioUrl ? (
+        <button
+          type="button"
+          className={buttonPrimary}
+          disabled={disabled || transcribing || !take}
+          onClick={() => {
+            if (take) onTranscribe(take);
+          }}
+        >
+          {transcribing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+          {transcribing ? "Transcribing" : "Transcribe"}
+        </button>
+      ) : null}
+      {preview && recorder.audioUrl ? (
+        <p className="text-xs leading-5 text-amber-800">
+          This preview cannot hear the recording. Type what you said in the box below, then submit.
+        </p>
+      ) : null}
       {recorder.error ? (
         <p role="alert" className="px-1 text-sm text-amber-800">
           {recorder.error}
@@ -105,7 +134,10 @@ export function AudioRecorder({
           <audio controls src={recorder.audioUrl} className="h-9 w-full" />
           <button
             type="button"
-            onClick={recorder.reset}
+            onClick={() => {
+              setTake(null);
+              recorder.reset();
+            }}
             className="inline-flex items-center justify-center gap-1.5 text-xs text-mute hover:text-ink"
           >
             <RotateCcw className="h-3.5 w-3.5" />
