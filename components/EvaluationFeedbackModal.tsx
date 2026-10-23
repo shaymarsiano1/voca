@@ -1,6 +1,7 @@
 "use client";
 
 import { MnemonicBadge } from "@/components/MnemonicBadge";
+import { hebrewFor } from "@/lib/word-bank";
 import type { Evaluation, Verdict } from "@/lib/types";
 
 const tone: Record<Verdict, { label: string; text: string }> = {
@@ -32,12 +33,21 @@ export function EvaluationFeedbackModal({
       <div className="divide-y divide-line border-y border-line">
         {evaluation.results.map((result) => {
           const style = tone[result.verdict];
+          const translation = hebrewFor(result.term);
           return (
             <article key={result.term} className="py-6">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <h3 className="text-lg font-medium tracking-tight text-ink">{result.term}</h3>
                 <span className={`text-sm ${style.text}`}>{style.label}</span>
               </div>
+              {translation ? (
+                <div className="mt-3">
+                  <p className="font-hebrew text-xs text-mute">תרגום</p>
+                  <p dir="rtl" className="font-hebrew mt-1 text-2xl font-medium text-ink">
+                    {translation}
+                  </p>
+                </div>
+              ) : null}
               <p dir="auto" className="font-hebrew mt-2 text-sm leading-7 text-ink/80">
                 {result.feedback}
               </p>
