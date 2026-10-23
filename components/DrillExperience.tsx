@@ -45,6 +45,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
   const [transcribing, setTranscribing] = useState(false);
   const [starting, setStarting] = useState(false);
   const [cardIndex, setCardIndex] = useState(0);
+  const [showSpeak, setShowSpeak] = useState(false);
   const [showList, setShowList] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(mode === "demo");
 
@@ -142,6 +143,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
     if (!today) return;
     setStarting(true);
     setCardIndex(0);
+    setShowSpeak(false);
     setShowList(false);
     try {
       if (mode === "demo") {
@@ -173,8 +175,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
   const capture = useCallback(
     async (blob: Blob, heard = "") => {
       if (heard.trim()) {
-        const term = payload?.words[cardIndex]?.term;
-        if (term) setNotes((current) => ({ ...current, [term]: heard.trim() }));
+        setTranscript(heard.trim());
         return;
       }
       if (mode === "demo") {
@@ -195,15 +196,14 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
           toast.error("Whisper returned an empty transcript. Try again or type instead.");
           return;
         }
-        const term = payload?.words[cardIndex]?.term;
-        if (term) setNotes((current) => ({ ...current, [term]: text }));
+        setTranscript(text);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Transcription failed.");
       } finally {
         setTranscribing(false);
       }
     },
-    [cardIndex, mode, payload?.words],
+    [mode, payload?.words],
   );
 
   async function submit() {
@@ -371,7 +371,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                     {payload.session?.domain || domain}
                   </h1>
                   <p className="text-sm text-mute">
-                    {showList ? "Today's five" : `${cardIndex + 1} of ${payload.words.length}`}
+                    {showList ? "Today's five" : showSpeak ? "All five" : `${cardIndex + 1} of ${payload.words.length}`}
                   </p>
                 </div>
                 <button
@@ -379,6 +379,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                   className="text-sm text-accent"
                   onClick={() => {
                     setCardIndex(0);
+                    setShowSpeak(false);
                     setShowList(false);
                     setPhase("ready");
                     setTab("today");
@@ -395,18 +396,47 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                             <span className="mr-2 font-mono text-xs text-mute">{String(index + 1).padStart(2, "0")}</span>
                             {word.term}
                           </p>
-                          <p dir="auto" className="mt-1 text-sm leading-6 text-mute">
-                            {notes[word.term]?.trim() || "No explanation yet"}
-                          </p>
                         </li>
                       ))}
                     </ul>
+                    <p dir="auto" className="text-sm leading-6 text-mute">
+                      {transcript.trim() || "No explanation yet"}
+                    </p>
                     <div className="flex items-center justify-between gap-3">
                       <button type="button" className="text-sm text-mute" onClick={() => setShowList(false)}>
-                        Back to cards
+                        Back to recording
                       </button>
                       <button type="button" className={buttonPrimary} onClick={() => void submit()}>
                         Submit answers
+                      </button>
+                    </div>
+                  </div>
+                ) : showSpeak ? (
+                  <div className="space-y-5">
+                    <p className="text-sm leading-6 text-mute">
+                      Explain all five in one recording, in Hebrew or English.
+                    </p>
+                    <AudioRecorder
+                      disabled={transcribing}
+                      transcribing={transcribing}
+                      onTranscript={setTranscript}
+                      onTranscribe={(blob, text) => void capture(blob, text)}
+                    />
+                    <label className="block">
+                      <span className="mb-1.5 block text-sm text-mute">What you said</span>
+                      <textarea
+                        value={transcript}
+                        onChange={(event) => setTranscript(event.target.value)}
+                        placeholder="Your explanation of all five words appears here while you speak."
+                        className={cn(field, "min-h-28")}
+                      />
+                    </label>
+                    <div className="flex items-center justify-between gap-3">
+                      <button type="button" className="text-sm text-mute" onClick={() => setShowSpeak(false)}>
+                        Back to cards
+                      </button>
+                      <button type="button" className={buttonPrimary} onClick={() => setShowList(true)}>
+                        See the list
                       </button>
                     </div>
                   </div>
@@ -423,22 +453,6 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                             </p>
                             <h2 className="mt-3 text-5xl font-semibold tracking-tight text-ink">{word.term}</h2>
                           </article>
-                          <AudioRecorder
-                            key={word.id}
-                            disabled={transcribing}
-                            transcribing={transcribing}
-                            onTranscript={(text) => setNotes((current) => ({ ...current, [word.term]: text }))}
-                            onTranscribe={(blob, text) => void capture(blob, text)}
-                          />
-                          <label className="block">
-                            <span className="mb-1.5 block text-sm text-mute">What you said</span>
-                            <textarea
-                              value={notes[word.term] ?? ""}
-                              onChange={(event) => setNotes((current) => ({ ...current, [word.term]: event.target.value }))}
-                              placeholder="Your explanation appears here while you speak."
-                              className={cn(field, "min-h-24")}
-                            />
-                          </label>
                           <div className="flex items-center justify-between gap-3">
                             <button
                               type="button"
@@ -451,9 +465,9 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                             <button
                               type="button"
                               className={buttonPrimary}
-                              onClick={() => (last ? setShowList(true) : setCardIndex((index) => index + 1))}
+                              onClick={() => (last ? setShowSpeak(true) : setCardIndex((index) => index + 1))}
                             >
-                              {last ? "See the list" : "Next word"}
+                              {last ? "Explain all five" : "Next word"}
                             </button>
                           </div>
                         </>
