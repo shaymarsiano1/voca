@@ -172,7 +172,6 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
     async (blob: Blob, heard = "") => {
       if (heard.trim()) {
         setTranscript(heard.trim());
-        toast.success("Transcript ready. Edit it before you submit.");
         return;
       }
       if (mode === "demo") {

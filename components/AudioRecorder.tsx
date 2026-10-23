@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Mic, RotateCcw, Square } from "lucide-react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { cn } from "@/lib/cn";
-import { buttonPrimary } from "@/lib/ui";
 
 function formatTime(ms: number) {
   const total = Math.floor(ms / 1000);
@@ -55,8 +54,6 @@ export function AudioRecorder({
   onTranscribe: (blob: Blob, text: string) => void;
 }) {
   const recorder = useAudioRecorder();
-  const [take, setTake] = useState<Blob | null>(null);
-  const [heard, setHeard] = useState("");
   const [canHear, setCanHear] = useState(true);
   const heardRef = useRef("");
   const recordingRef = useRef(false);
@@ -71,7 +68,6 @@ export function AudioRecorder({
 
   function publish(text: string) {
     heardRef.current = text;
-    setHeard(text);
     if (text) onTranscriptRef.current(text);
   }
 
@@ -131,12 +127,11 @@ export function AudioRecorder({
     recordingRef.current = false;
     stopHearing();
     const blob = await stop();
-    setTake(blob);
     if (heardRef.current) onTranscriptRef.current(heardRef.current);
+    else if (blob) onTranscribe(blob, "");
   }
 
   function begin() {
-    setTake(null);
     recordingRef.current = true;
     startHearing();
     void start();
@@ -208,20 +203,6 @@ export function AudioRecorder({
             ? "Tap the microphone and explain the five words. The transcript fills in while you speak."
             : "This browser cannot transcribe speech. Type the explanation in the box below."}
       </p>
-      {heard ? <p className="text-sm leading-6 text-ink">{heard}</p> : null}
-      {recorder.audioUrl ? (
-        <button
-          type="button"
-          className={buttonPrimary}
-          disabled={disabled || transcribing || !take}
-          onClick={() => {
-            if (take) onTranscribe(take, heardRef.current);
-          }}
-        >
-          {transcribing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-          {transcribing ? "Transcribing" : "Transcribe"}
-        </button>
-      ) : null}
       {recorder.error ? (
         <p role="alert" className="text-sm text-amber-800">
           {recorder.error}
@@ -235,7 +216,6 @@ export function AudioRecorder({
             onClick={() => {
               recordingRef.current = false;
               stopHearing();
-              setTake(null);
               publish("");
               recorder.reset();
             }}
