@@ -169,9 +169,14 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
   }
 
   const capture = useCallback(
-    async (blob: Blob) => {
+    async (blob: Blob, heard = "") => {
+      if (heard.trim()) {
+        setTranscript(heard.trim());
+        toast.success("Transcript ready. Edit it before you submit.");
+        return;
+      }
       if (mode === "demo") {
-        toast("This preview can't transcribe. Type what you said in the box below.");
+        toast.error("No speech was captured. Speak again, or type in the box.");
         return;
       }
       setTranscribing(true);
@@ -382,8 +387,8 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                   <AudioRecorder
                     disabled={transcribing}
                     transcribing={transcribing}
-                    preview={mode === "demo"}
-                    onTranscribe={(blob) => void capture(blob)}
+                    onTranscript={setTranscript}
+                    onTranscribe={(blob, text) => void capture(blob, text)}
                   />
                   <TextInputForm
                     transcript={transcript}

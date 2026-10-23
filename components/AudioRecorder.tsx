@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Mic, RotateCcw, Square } from "lucide-react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { cn } from "@/lib/cn";
@@ -13,21 +13,134 @@ function formatTime(ms: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+type SpeechEvent = {
+  resultIndex: number;
+  results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
+};
+
+type SpeechRec = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechEvent) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+function createRecognizer() {
+  const host = window as Window & {
+    SpeechRecognition?: new () => SpeechRec;
+    webkitSpeechRecognition?: new () => SpeechRec;
+  };
+  const Ctor = host.SpeechRecognition ?? host.webkitSpeechRecognition;
+  if (!Ctor) return null;
+  const recognition = new Ctor();
+  recognition.lang = "he-IL";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  return recognition;
+}
+
 export function AudioRecorder({
   disabled = false,
   transcribing = false,
-  preview = false,
+  onTranscript,
   onTranscribe,
 }: {
   disabled?: boolean;
   transcribing?: boolean;
-  preview?: boolean;
-  onTranscribe: (blob: Blob) => void;
+  onTranscript: (text: string) => void;
+  onTranscribe: (blob: Blob, text: string) => void;
 }) {
   const recorder = useAudioRecorder();
   const [take, setTake] = useState<Blob | null>(null);
+  const [heard, setHeard] = useState("");
+  const [canHear, setCanHear] = useState(true);
+  const heardRef = useRef("");
+  const recordingRef = useRef(false);
+  const recognitionRef = useRef<SpeechRec | null>(null);
+  const onTranscriptRef = useRef(onTranscript);
   const { start, stop, status } = recorder;
   const recording = status === "recording";
+
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript;
+  }, [onTranscript]);
+
+  function publish(text: string) {
+    heardRef.current = text;
+    setHeard(text);
+    if (text) onTranscriptRef.current(text);
+  }
+
+  function stopHearing() {
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (!recognition) return;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+    try {
+      recognition.stop();
+    } catch {
+      // The recognizer was already stopped.
+    }
+  }
+
+  function startHearing() {
+    stopHearing();
+    publish("");
+    const recognition = createRecognizer();
+    if (!recognition) {
+      setCanHear(false);
+      return;
+    }
+    setCanHear(true);
+    recognition.onresult = (event) => {
+      let finalText = "";
+      let interim = "";
+      for (let index = 0; index < event.results.length; index += 1) {
+        const piece = event.results[index]?.[0]?.transcript ?? "";
+        if (event.results[index]?.isFinal) finalText += piece;
+        else interim += piece;
+      }
+      publish(`${finalText} ${interim}`.replace(/\s+/g, " ").trim());
+    };
+    recognition.onerror = (event) => {
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") setCanHear(false);
+    };
+    recognition.onend = () => {
+      if (recognitionRef.current !== recognition || !recordingRef.current) return;
+      try {
+        recognition.start();
+      } catch {
+        setCanHear(false);
+      }
+    };
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch {
+      setCanHear(false);
+    }
+  }
+
+  async function finish() {
+    recordingRef.current = false;
+    stopHearing();
+    const blob = await stop();
+    setTake(blob);
+    if (heardRef.current) onTranscriptRef.current(heardRef.current);
+  }
+
+  function begin() {
+    setTake(null);
+    recordingRef.current = true;
+    startHearing();
+    void start();
+  }
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -37,34 +150,23 @@ export function AudioRecorder({
         return;
       }
       event.preventDefault();
-      if (recording) {
-        void stop().then((blob) => {
-          setTake(blob);
-        });
-      } else {
-        setTake(null);
-        void start();
-      }
+      if (recording) void finish();
+      else begin();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // finish and begin close over the latest recorder controls.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disabled, recording, start, stop, transcribing]);
 
-  async function toggle() {
-    if (recording) {
-      setTake(await recorder.stop());
-      return;
-    }
-    setTake(null);
-    await recorder.start();
-  }
+  useEffect(() => () => stopHearing(), []);
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-line bg-sheet p-4">
       <div className="flex items-center gap-4">
         <button
           type="button"
-          onClick={() => void toggle()}
+          onClick={() => (recording ? void finish() : begin())}
           disabled={disabled || transcribing}
           aria-pressed={recording}
           aria-label={recording ? "Stop recording" : "Start recording"}
@@ -84,7 +186,7 @@ export function AudioRecorder({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-medium text-ink">
-              {transcribing ? "Transcribing" : recording ? "Tap stop" : "Tap to record"}
+              {transcribing ? "Transcribing" : recording ? "Listening" : "Tap to record"}
             </p>
             <p className="font-mono text-xs tabular-nums text-mute">{formatTime(recorder.elapsedMs)}</p>
           </div>
@@ -101,31 +203,27 @@ export function AudioRecorder({
       </div>
       <p className="text-xs leading-5 text-mute">
         {recording
-          ? "Explain the five words, in Hebrew or English. Tap the square when you finish."
-          : recorder.audioUrl
-            ? "Tap Transcribe. The words land in the box below, and you can edit them."
-            : "Tap the microphone, say what the words mean, then tap Transcribe."}
+          ? "Speak in Hebrew or English. The words appear below as you talk. Tap the square to stop."
+          : canHear
+            ? "Tap the microphone and explain the five words. The transcript fills in while you speak."
+            : "This browser cannot transcribe speech. Type the explanation in the box below."}
       </p>
+      {heard ? <p className="text-sm leading-6 text-ink">{heard}</p> : null}
       {recorder.audioUrl ? (
         <button
           type="button"
           className={buttonPrimary}
           disabled={disabled || transcribing || !take}
           onClick={() => {
-            if (take) onTranscribe(take);
+            if (take) onTranscribe(take, heardRef.current);
           }}
         >
           {transcribing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
           {transcribing ? "Transcribing" : "Transcribe"}
         </button>
       ) : null}
-      {preview && recorder.audioUrl ? (
-        <p className="text-xs leading-5 text-amber-800">
-          This preview cannot hear the recording. Type what you said in the box below, then submit.
-        </p>
-      ) : null}
       {recorder.error ? (
-        <p role="alert" className="px-1 text-sm text-amber-800">
+        <p role="alert" className="text-sm text-amber-800">
           {recorder.error}
         </p>
       ) : null}
@@ -135,7 +233,10 @@ export function AudioRecorder({
           <button
             type="button"
             onClick={() => {
+              recordingRef.current = false;
+              stopHearing();
               setTake(null);
+              publish("");
               recorder.reset();
             }}
             className="inline-flex items-center justify-center gap-1.5 text-xs text-mute hover:text-ink"
