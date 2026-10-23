@@ -10,14 +10,12 @@ import { DOMAIN_META } from "@/components/domains";
 import { EvaluationFeedbackModal } from "@/components/EvaluationFeedbackModal";
 import { Header } from "@/components/Header";
 import { LibraryView } from "@/components/LibraryView";
-import { TextInputForm } from "@/components/TextInputForm";
-import { WordCard } from "@/components/WordCard";
 import { createClient } from "@/lib/supabase/client";
 import { completeDemoDay, readDemo, saveDemoDraft, startDemoDay, toDailyResponse } from "@/lib/demo-store";
 import { DOMAIN_IDS, isDomainId, type DomainId } from "@/lib/domains";
 import { formatLongDate, localDateString } from "@/lib/dates";
 import { cn } from "@/lib/cn";
-import { buttonPrimary } from "@/lib/ui";
+import { buttonPrimary, field } from "@/lib/ui";
 import type { DailyResponse, Evaluation, LibraryWord } from "@/lib/types";
 
 type Phase = "loading" | "ready" | "drill" | "evaluating" | "results" | "error";
@@ -46,6 +44,8 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
   const [email, setEmail] = useState<string | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [showList, setShowList] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(mode === "demo");
 
   const applyPayload = useCallback((data: DailyResponse, draftNotes?: Record<string, string>) => {
@@ -126,7 +126,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (phase !== "drill") return;
+      if (phase !== "drill" || !showList) return;
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
         event.preventDefault();
         void submit();
@@ -136,11 +136,13 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
     return () => window.removeEventListener("keydown", onKey);
     // submit is recreated each render; the listener is rebound below via the function declaration.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, transcript, notes, payload]);
+  }, [phase, showList, transcript, notes, payload]);
 
   async function begin() {
     if (!today) return;
     setStarting(true);
+    setCardIndex(0);
+    setShowList(false);
     try {
       if (mode === "demo") {
         const state = startDemoDay(domain, today);
@@ -171,7 +173,8 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
   const capture = useCallback(
     async (blob: Blob, heard = "") => {
       if (heard.trim()) {
-        setTranscript(heard.trim());
+        const term = payload?.words[cardIndex]?.term;
+        if (term) setNotes((current) => ({ ...current, [term]: heard.trim() }));
         return;
       }
       if (mode === "demo") {
@@ -192,19 +195,27 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
           toast.error("Whisper returned an empty transcript. Try again or type instead.");
           return;
         }
-        setTranscript(text);
-        toast.success("Transcript ready. Edit it before you submit.");
+        const term = payload?.words[cardIndex]?.term;
+        if (term) setNotes((current) => ({ ...current, [term]: text }));
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Transcription failed.");
       } finally {
         setTranscribing(false);
       }
     },
-    [mode, payload?.words],
+    [cardIndex, mode, payload?.words],
   );
 
   async function submit() {
-    const hasContent = transcript.trim().length > 0 || Object.values(notes).some((note) => note.trim());
+    const spoken = (payload?.words ?? [])
+      .map((word) => {
+        const said = notes[word.term]?.trim();
+        return said ? `${word.term}: ${said}` : "";
+      })
+      .filter(Boolean)
+      .join("\n");
+    const answer = spoken || transcript.trim();
+    const hasContent = answer.length > 0 || Object.values(notes).some((note) => note.trim());
     if (!hasContent) {
       toast.error("Record or write an explanation before submitting.");
       return;
@@ -213,7 +224,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
     setPhase("evaluating");
     try {
       if (mode === "demo") {
-        const state = completeDemoDay(transcript, notes, today);
+        const state = completeDemoDay(answer, notes, today);
         setLibrary(state.library);
         applyPayload(toDailyResponse(state, today), notes);
         toast.success("Set reviewed");
@@ -224,7 +235,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: payload.session.id,
-          transcript,
+          transcript: answer,
           writtenInputs: notes,
           localDate: today,
         }),
@@ -247,8 +258,6 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
   }
 
   const evaluation: Evaluation | null = payload?.session?.evaluation ?? null;
-  const reviewCount = payload?.words.filter((word) => word.role === "review").length ?? 0;
-  const freshCount = payload?.words.filter((word) => word.role === "new").length ?? 0;
   const locked = phase === "drill" || phase === "evaluating" || phase === "results";
 
   return (
@@ -346,7 +355,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
               </motion.section>
             ) : null}
 
-            {phase === "drill" && payload ? (
+            {phase === "drill" && payload && payload.words.length > 0 ? (
               <motion.section key="drill" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
                 <div className="flex items-baseline justify-between gap-3">
                   <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-ink">
@@ -362,47 +371,96 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                     {payload.session?.domain || domain}
                   </h1>
                   <p className="text-sm text-mute">
-                    <span className="text-amber-700">{reviewCount} review</span>
-                    <span className="px-1.5">·</span>
-                    <span className="text-sky-700">{freshCount} new</span>
+                    {showList ? "Today's five" : `${cardIndex + 1} of ${payload.words.length}`}
                   </p>
                 </div>
                 <button
                   type="button"
                   className="text-sm text-accent"
                   onClick={() => {
+                    setCardIndex(0);
+                    setShowList(false);
                     setPhase("ready");
                     setTab("today");
                   }}
                 >
                   Change subject
                 </button>
-                <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-sheet">
-                  {payload.words.map((word, index) => (
-                    <WordCard key={word.id} word={word} index={index} />
-                  ))}
-                </div>
-                <div className="space-y-5">
-                  <AudioRecorder
-                    disabled={transcribing}
-                    transcribing={transcribing}
-                    onTranscript={setTranscript}
-                    onTranscribe={(blob, text) => void capture(blob, text)}
-                  />
-                  <TextInputForm
-                    transcript={transcript}
-                    onTranscript={setTranscript}
-                    words={payload.words}
-                    notes={notes}
-                    onNote={(term, value) => setNotes((current) => ({ ...current, [term]: value }))}
-                  />
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-mute">⌘/Ctrl + Enter to submit</p>
-                    <button type="button" className={buttonPrimary} onClick={() => void submit()}>
-                      Submit answers
-                    </button>
+                {showList ? (
+                  <div className="space-y-5">
+                    <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-sheet">
+                      {payload.words.map((word, index) => (
+                        <li key={word.id} className="px-4 py-4">
+                          <p className="text-base font-medium text-ink">
+                            <span className="mr-2 font-mono text-xs text-mute">{String(index + 1).padStart(2, "0")}</span>
+                            {word.term}
+                          </p>
+                          <p dir="auto" className="mt-1 text-sm leading-6 text-mute">
+                            {notes[word.term]?.trim() || "No explanation yet"}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex items-center justify-between gap-3">
+                      <button type="button" className="text-sm text-mute" onClick={() => setShowList(false)}>
+                        Back to cards
+                      </button>
+                      <button type="button" className={buttonPrimary} onClick={() => void submit()}>
+                        Submit answers
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-5">
+                    {(() => {
+                      const word = payload.words[Math.min(cardIndex, payload.words.length - 1)];
+                      const last = cardIndex >= payload.words.length - 1;
+                      return (
+                        <>
+                          <article className="rounded-3xl border border-line bg-sheet px-6 py-14 text-center">
+                            <p className={word.role === "review" ? "text-xs font-medium text-amber-700" : "text-xs font-medium text-sky-700"}>
+                              {word.role === "review" ? "Review" : "New"}
+                            </p>
+                            <h2 className="mt-3 text-5xl font-semibold tracking-tight text-ink">{word.term}</h2>
+                          </article>
+                          <AudioRecorder
+                            key={word.id}
+                            disabled={transcribing}
+                            transcribing={transcribing}
+                            onTranscript={(text) => setNotes((current) => ({ ...current, [word.term]: text }))}
+                            onTranscribe={(blob, text) => void capture(blob, text)}
+                          />
+                          <label className="block">
+                            <span className="mb-1.5 block text-sm text-mute">What you said</span>
+                            <textarea
+                              value={notes[word.term] ?? ""}
+                              onChange={(event) => setNotes((current) => ({ ...current, [word.term]: event.target.value }))}
+                              placeholder="Your explanation appears here while you speak."
+                              className={cn(field, "min-h-24")}
+                            />
+                          </label>
+                          <div className="flex items-center justify-between gap-3">
+                            <button
+                              type="button"
+                              className="text-sm text-mute disabled:opacity-40"
+                              disabled={cardIndex === 0}
+                              onClick={() => setCardIndex((index) => Math.max(0, index - 1))}
+                            >
+                              Previous
+                            </button>
+                            <button
+                              type="button"
+                              className={buttonPrimary}
+                              onClick={() => (last ? setShowList(true) : setCardIndex((index) => index + 1))}
+                            >
+                              {last ? "See the list" : "Next word"}
+                            </button>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </motion.section>
             ) : null}
 
