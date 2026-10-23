@@ -115,7 +115,7 @@ export async function generateTerms(
 }
 
 export async function evaluateExplanations(input: {
-  words: Array<{ term: string; definition: string; partOfSpeech: string }>;
+  words: Array<{ term: string; definition: string; partOfSpeech: string; translation?: string }>;
   transcript: string;
   notes: Record<string, string>;
 }): Promise<{ results: ModelTermResult[]; session_summary: string } | null> {
@@ -126,10 +126,10 @@ export async function evaluateExplanations(input: {
     .map((word) => `- ${word.term}: ${input.notes[word.term]?.trim() || "(no written note)"}`)
     .join("\n");
   const groundTruth = input.words
-    .map(
-      (word) =>
-        `- ${word.term} (${word.partOfSpeech}): ${word.definition || "Use the standard technical meaning."}`,
-    )
+    .map((word) => {
+      const translation = word.translation?.trim();
+      return `- ${word.term} (${word.partOfSpeech}): ${word.definition || "Use the standard technical meaning."}${translation ? ` Hebrew: ${translation}` : ""}`;
+    })
     .join("\n");
 
   const completion = await openai.chat.completions.parse({
@@ -140,9 +140,13 @@ export async function evaluateExplanations(input: {
         role: "system",
         content: [
           "You grade a software engineer's explanation of technical English vocabulary.",
-          "The learner often code-switches between Hebrew and English. A correct Hebrew explanation counts as correct.",
+          "The learner often code-switches between Hebrew and English. Saying the Hebrew translation counts as correct.",
+          "The transcript comes from speech recognition and often misspells Hebrew. Grade the intended word, not the exact letters.",
+          "A near miss of the supplied Hebrew translation is mastered: one or two swapped, missing, or extra letters, or a similar-sounding word.",
+          "Example: for Latency, השהיה, השהייה, השעיה, and השהיייה all count as the translation.",
+          "One recording may explain all the terms together. Split what they said per term.",
           "Verdicts:",
-          "- mastered: the explanation captures the technical meaning, including the important nuance. Informal language is fine.",
+          "- mastered: the explanation or the Hebrew translation captures the technical meaning. Informal language and recognition errors are fine.",
           "- partial: the explanation points the right way but misses a defining nuance, scope, or contrast.",
           "- missed: incorrect, unrelated, empty, or too vague to verify.",
           "For every term return user_explanation with only what they said about THAT term, or an empty string.",

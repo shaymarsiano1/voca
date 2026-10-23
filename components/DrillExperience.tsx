@@ -224,7 +224,30 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
     setPhase("evaluating");
     try {
       if (mode === "demo") {
-        const state = completeDemoDay(answer, notes, today);
+        let graded: Evaluation | undefined;
+        const response = await fetch("/api/preview/grade", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transcript: answer,
+            notes,
+            words: payload.words.map((word) => ({
+              term: word.term,
+              repetitions: word.repetitions,
+              intervalDays: word.intervalDays,
+              easeFactor: word.easeFactor,
+              status: word.status,
+            })),
+          }),
+        });
+        if (response.ok) {
+          graded = (await response.json()) as Evaluation;
+        } else if (response.status !== 503 && response.status !== 502) {
+          throw new Error(await readError(response));
+        } else {
+          toast.message("המודל לא מחובר, אז הבדיקה נשארה על המכשיר.");
+        }
+        const state = completeDemoDay(answer, notes, today, graded);
         setLibrary(state.library);
         applyPayload(toDailyResponse(state, today), notes);
         toast.success("Set reviewed");
@@ -494,8 +517,8 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                   evaluation={evaluation}
                   transcript={payload?.session?.transcript || transcript}
                   note={
-                    mode === "demo"
-                      ? "Preview scoring stays on this device. A signed-in set uses GPT-4o mini, which can judge Hebrew and English together."
+                    mode === "demo" && evaluation.evaluator !== "gpt-4o-mini"
+                      ? "הבדיקה נשארה על המכשיר כי המודל לא מחובר."
                       : evaluation.evaluator === "fallback"
                         ? "Scored with the local checker because the model was unavailable. The review schedule was still saved."
                         : undefined

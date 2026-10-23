@@ -166,22 +166,29 @@ export function saveDemoDraft(transcript: string, notes: Record<string, string>)
   });
 }
 
-export function completeDemoDay(transcript: string, notes: Record<string, string>, today: string) {
+export function completeDemoDay(
+  transcript: string,
+  notes: Record<string, string>,
+  today: string,
+  graded?: Evaluation,
+) {
   const current = readDemo();
   if (!current.active) throw new Error("Start today's set first.");
   if (current.active.evaluation) return current;
 
-  const evaluation = evaluateLocally({
-    words: current.active.words.map((word) => ({
-      term: word.term,
-      repetitions: word.repetitions,
-      intervalDays: word.intervalDays,
-      easeFactor: word.easeFactor,
-      status: word.status,
-    })),
-    transcript,
-    notes,
-  });
+  const evaluation =
+    graded ??
+    evaluateLocally({
+      words: current.active.words.map((word) => ({
+        term: word.term,
+        repetitions: word.repetitions,
+        intervalDays: word.intervalDays,
+        easeFactor: word.easeFactor,
+        status: word.status,
+      })),
+      transcript,
+      notes,
+    });
 
   const byTerm = new Map(current.library.map((word) => [word.term.toLowerCase(), word]));
   current.active.words.forEach((word, index) => {

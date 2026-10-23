@@ -15,6 +15,7 @@ export async function proxy(request: NextRequest) {
   const env = getSupabaseEnv();
 
   if (!env) {
+    if (path === "/api/preview/grade") return NextResponse.next();
     if (path.startsWith("/api/")) {
       return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
     }

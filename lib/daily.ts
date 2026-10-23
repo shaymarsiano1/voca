@@ -16,7 +16,7 @@ import type {
   WordRow,
   WordStatus,
 } from "@/lib/types";
-import { findBankEntry, pickFromBank, type BankEntry } from "@/lib/word-bank";
+import { findBankEntry, hebrewFor, pickFromBank, type BankEntry } from "@/lib/word-bank";
 
 type Client = SupabaseClient;
 
@@ -390,8 +390,9 @@ export async function evaluateDaily(
     model = await evaluateExplanations({
       words: words.map((word) => ({
         term: word.term,
-        definition: word.canonical_definition ?? "",
+        definition: word.canonical_definition ?? findBankEntry(word.term)?.definition ?? "",
         partOfSpeech: word.part_of_speech ?? "noun",
+        translation: hebrewFor(word.term),
       })),
       transcript,
       notes,
