@@ -10,6 +10,7 @@ import { DOMAIN_META } from "@/components/domains";
 import { EvaluationFeedbackModal } from "@/components/EvaluationFeedbackModal";
 import { Header } from "@/components/Header";
 import { LibraryView } from "@/components/LibraryView";
+import { WordCard } from "@/components/WordCard";
 import { createClient } from "@/lib/supabase/client";
 import { completeDemoDay, readDemo, saveDemoDraft, startDemoDay, toDailyResponse } from "@/lib/demo-store";
 import { DOMAIN_IDS, isDomainId, type DomainId } from "@/lib/domains";
@@ -44,9 +45,6 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
   const [email, setEmail] = useState<string | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [cardIndex, setCardIndex] = useState(0);
-  const [showSpeak, setShowSpeak] = useState(false);
-  const [showList, setShowList] = useState(false);
   const [libraryLoaded, setLibraryLoaded] = useState(mode === "demo");
 
   const applyPayload = useCallback((data: DailyResponse, draftNotes?: Record<string, string>) => {
@@ -127,7 +125,7 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (phase !== "drill" || !showList) return;
+      if (phase !== "drill") return;
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
         event.preventDefault();
         void submit();
@@ -137,14 +135,11 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
     return () => window.removeEventListener("keydown", onKey);
     // submit is recreated each render; the listener is rebound below via the function declaration.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, showList, transcript, notes, payload]);
+  }, [phase, transcript, notes, payload]);
 
   async function begin() {
     if (!today) return;
     setStarting(true);
-    setCardIndex(0);
-    setShowSpeak(false);
-    setShowList(false);
     try {
       if (mode === "demo") {
         const state = startDemoDay(domain, today);
@@ -393,111 +388,46 @@ export function DrillExperience({ mode }: { mode: "live" | "demo" }) {
                     />
                     {payload.session?.domain || domain}
                   </h1>
-                  <p className="text-sm text-mute">
-                    {showList ? "Today's five" : showSpeak ? "All five" : `${cardIndex + 1} of ${payload.words.length}`}
-                  </p>
+                  <p className="text-sm text-mute">Five words</p>
                 </div>
                 <button
                   type="button"
                   className="text-sm text-accent"
                   onClick={() => {
-                    setCardIndex(0);
-                    setShowSpeak(false);
-                    setShowList(false);
                     setPhase("ready");
                     setTab("today");
                   }}
                 >
                   Change subject
                 </button>
-                {showList ? (
-                  <div className="space-y-5">
-                    <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-sheet">
-                      {payload.words.map((word, index) => (
-                        <li key={word.id} className="px-4 py-4">
-                          <p className="text-base font-medium text-ink">
-                            <span className="mr-2 font-mono text-xs text-mute">{String(index + 1).padStart(2, "0")}</span>
-                            {word.term}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                    <p dir="auto" className="text-sm leading-6 text-mute">
-                      {transcript.trim() || "No explanation yet"}
-                    </p>
-                    <div className="flex items-center justify-between gap-3">
-                      <button type="button" className="text-sm text-mute" onClick={() => setShowList(false)}>
-                        Back to recording
-                      </button>
-                      <button type="button" className={buttonPrimary} onClick={() => void submit()}>
-                        Submit answers
-                      </button>
-                    </div>
-                  </div>
-                ) : showSpeak ? (
-                  <div className="space-y-5">
-                    <p className="text-sm leading-6 text-mute">
-                      Explain all five in one recording, in Hebrew or English.
-                    </p>
-                    <AudioRecorder
-                      disabled={transcribing}
-                      transcribing={transcribing}
-                      onTranscript={setTranscript}
-                      onTranscribe={(blob, text) => void capture(blob, text)}
-                    />
-                    <label className="block">
-                      <span className="mb-1.5 block text-sm text-mute">What you said</span>
-                      <textarea
-                        value={transcript}
-                        onChange={(event) => setTranscript(event.target.value)}
-                        placeholder="Your explanation of all five words appears here while you speak."
-                        className={cn(field, "min-h-28")}
-                      />
-                    </label>
-                    <div className="flex items-center justify-between gap-3">
-                      <button type="button" className="text-sm text-mute" onClick={() => setShowSpeak(false)}>
-                        Back to cards
-                      </button>
-                      <button type="button" className={buttonPrimary} onClick={() => setShowList(true)}>
-                        See the list
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-5">
-                    {(() => {
-                      const word = payload.words[Math.min(cardIndex, payload.words.length - 1)];
-                      const last = cardIndex >= payload.words.length - 1;
-                      return (
-                        <>
-                          <article className="rounded-3xl border border-line bg-sheet px-6 py-14 text-center">
-                            <p className={word.role === "review" ? "text-xs font-medium text-amber-700" : "text-xs font-medium text-sky-700"}>
-                              {word.role === "review" ? "Review" : "New"}
-                            </p>
-                            <h2 className="mt-3 text-5xl font-semibold tracking-tight text-ink">{word.term}</h2>
-                          </article>
-                          <div className="flex items-center justify-between gap-3">
-                            <button
-                              type="button"
-                              className="text-sm text-mute disabled:opacity-40"
-                              disabled={cardIndex === 0}
-                              onClick={() => setCardIndex((index) => Math.max(0, index - 1))}
-                            >
-                              Previous
-                            </button>
-                            <button
-                              type="button"
-                              className={buttonPrimary}
-                              onClick={() => (last ? setShowSpeak(true) : setCardIndex((index) => index + 1))}
-                            >
-                              {last ? "Explain all five" : "Next word"}
-                            </button>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                )}
+                <ul className="space-y-2">
+                  {payload.words.map((word, index) => (
+                    <li key={word.id}>
+                      <WordCard word={word} index={index} />
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-sm leading-6 text-mute">
+                  Record one explanation for all five, in Hebrew or English. The list stays here while you speak.
+                </p>
+                <AudioRecorder
+                  disabled={transcribing}
+                  transcribing={transcribing}
+                  onTranscript={setTranscript}
+                  onTranscribe={(blob, text) => void capture(blob, text)}
+                />
+                <label className="block">
+                  <span className="mb-1.5 block text-sm text-mute">What you said</span>
+                  <textarea
+                    value={transcript}
+                    onChange={(event) => setTranscript(event.target.value)}
+                    placeholder="Your explanation of all five words appears here while you speak."
+                    className={cn(field, "min-h-28")}
+                  />
+                </label>
+                <button type="button" className={buttonPrimary} onClick={() => void submit()}>
+                  Submit answers
+                </button>
               </motion.section>
             ) : null}
 

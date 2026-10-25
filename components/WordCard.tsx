@@ -4,13 +4,9 @@ export function WordCard({ word, index }: { word: PracticeWord; index: number })
   const review = word.role === "review";
 
   return (
-    <article className="flex items-center gap-3 px-4 py-3.5">
-      <span className="w-5 shrink-0 font-mono text-[11px] text-mute">{String(index + 1).padStart(2, "0")}</span>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <h3 className="text-base font-medium tracking-tight text-ink">{word.term}</h3>
-        </div>
-      </div>
+    <article className="flex items-center gap-3 rounded-2xl border border-line bg-sheet px-4 py-4">
+      <span className="w-6 shrink-0 font-mono text-xs text-mute">{String(index + 1).padStart(2, "0")}</span>
+      <h3 className="min-w-0 flex-1 text-2xl font-semibold tracking-tight text-ink">{word.term}</h3>
       <span
         className={
           review

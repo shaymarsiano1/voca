@@ -4,10 +4,25 @@ import { MnemonicBadge } from "@/components/MnemonicBadge";
 import { hebrewFor } from "@/lib/word-bank";
 import type { Evaluation, Verdict } from "@/lib/types";
 
-const tone: Record<Verdict, { label: string; text: string }> = {
-  mastered: { label: "Mastered", text: "text-emerald-700" },
-  partial: { label: "Needs review", text: "text-amber-700" },
-  missed: { label: "Missed", text: "text-mute" },
+const tone: Record<Verdict, { label: string; text: string; chip: string; card: string }> = {
+  mastered: {
+    label: "Right",
+    text: "text-emerald-800",
+    chip: "bg-emerald-100",
+    card: "border-emerald-200",
+  },
+  partial: {
+    label: "Not quite",
+    text: "text-amber-800",
+    chip: "bg-amber-100",
+    card: "border-amber-200",
+  },
+  missed: {
+    label: "Missed",
+    text: "text-mute",
+    chip: "bg-canvas",
+    card: "border-line",
+  },
 };
 
 export function EvaluationFeedbackModal({
@@ -30,43 +45,44 @@ export function EvaluationFeedbackModal({
         {note ? <p className="mt-3 max-w-xl text-sm leading-6 text-mute">{note}</p> : null}
       </div>
 
-      <div className="divide-y divide-line border-y border-line">
-        {evaluation.results.map((result) => {
+      <ul className="space-y-3">
+        {evaluation.results.map((result, index) => {
           const style = tone[result.verdict];
           const translation = hebrewFor(result.term);
           return (
-            <article key={result.term} className="py-6">
-              <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h3 className="text-lg font-medium tracking-tight text-ink">{result.term}</h3>
-                <span className={`text-sm ${style.text}`}>{style.label}</span>
-              </div>
-              {translation ? (
-                <div className="mt-3">
-                  <p className="font-hebrew text-xs text-mute">תרגום</p>
-                  <p dir="rtl" className="font-hebrew mt-1 text-2xl font-medium text-ink">
-                    {translation}
-                  </p>
+            <li key={result.term}>
+              <article className={`rounded-2xl border bg-sheet p-4 ${style.card}`}>
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 w-6 shrink-0 font-mono text-xs text-mute">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-2xl font-semibold tracking-tight text-ink">{result.term}</h3>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${style.chip} ${style.text}`}>
+                        {style.label}
+                      </span>
+                    </div>
+                    {translation ? (
+                      <p dir="rtl" className="font-hebrew mt-1 text-xl font-medium text-ink">
+                        {translation}
+                      </p>
+                    ) : null}
+                    <p dir="auto" className="font-hebrew mt-3 text-sm leading-6 text-ink/80">
+                      {result.feedback}
+                    </p>
+                    {result.verdict !== "mastered" && result.correct_definition ? (
+                      <p className="mt-2 text-sm leading-6 text-ink">{result.correct_definition}</p>
+                    ) : null}
+                    <MnemonicBadge hook={result.mnemonic_hook} context={result.system_context} />
+                    <p className="mt-2 text-xs text-mute">{result.review_label}</p>
+                  </div>
                 </div>
-              ) : null}
-              <p dir="auto" className="font-hebrew mt-2 text-sm leading-7 text-ink/80">
-                {result.feedback}
-              </p>
-              {result.user_explanation ? (
-                <p className="mt-3 text-sm leading-6 text-mute">{result.user_explanation}</p>
-              ) : null}
-              {result.verdict !== "mastered" && result.correct_definition ? (
-                <p className="mt-3 text-sm leading-6 text-ink">{result.correct_definition}</p>
-              ) : null}
-              <MnemonicBadge
-                hook={result.mnemonic_hook}
-                context={result.system_context}
-                defaultOpen={result.verdict !== "mastered"}
-              />
-              <p className="mt-3 text-xs text-mute">{result.review_label}</p>
-            </article>
+              </article>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
       {transcript ? (
         <details className="text-sm text-mute">
